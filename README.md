@@ -1,8 +1,22 @@
-﻿# [Transparent File Encryption SDK](https://www.easefilter.com/Forums_Files/Transparent_Encryption_Filter_Driver.htm)
- A C# transparent file encryption example was implemented with the Transparent File Encryption Filter Driver SDK. The transparent file encryption performs real-time I/O encryption and decryption of the files in any block data with 16 bytes. The encryption uses a 256 bits symmetric key to encrypt or decrypt the data with AES encryption algorithm. Auto file encryption protects data "at rest", meaning the transparent data and files encryption. It provides the ability to comply with policies which can be applied by users, processes and file type. This allows only authorized users and processes to access the encrypted files, unauthorized users and processes can’t access the encrypted files.
- 
-![File Encryption](https://www.easefilter.com/Images/TransparentFileEncryption.png)
+﻿# Transparent File Encryption Filter Driver SDK (EEFD)
 
+[![FIPS 140-2 Compliant](https://img.shields.io/badge/FIPS%20140--2-Compliant-success)](#)
+[![Encryption](https://img.shields.io/badge/Encryption-AES--128%2F192%2F256-blue)](#)
+[![Platform](https://img.shields.io/badge/Platform-Windows-lightgray)](#)
+[![Languages](https://img.shields.io/badge/Languages-C%23%20%7C%20C%2B%2B%20%7C%20Python%20%7C%20Java%20%7C%20Go%20%7C%20Rust-orange)](#)
+
+The **EaseFilter Encryption Filter Driver (EEFD) SDK** provides a kernel-mode framework for Windows environments that enables developers to implement military-grade, transparent, "at-rest" data encryption dynamically at the file-system level. By intercepting I/O requests before they hit the physical disk, EEFD secures data seamlessly without requiring any modifications to existing enterprise applications.
+
+---
+
+## 🏗 Core Architecture
+
+Unlike traditional volume-level disk encryption, EEFD provides granular, policy-based security operating via two main components:
+![File Encryption](https://www.easefilter.com/Images/transparent-encryption-architecture.jpg)
+
+*   **Kernel-Mode Filter Driver (`EaseFlt.sys`)**: Sits between the Windows I/O Manager and the file system. It intercepts I/O Request Packets (IRPs) for read/write operations, enforcing encryption policies and executing cryptographic transformations in real-time.
+*   **User-Mode API Library (`FilterAPI.dll`)**: A managed/unmanaged library that allows developers to define filter rules, manage encryption keys, and register I/O callbacks from high-level applications.
+ 
 ## The advantages of the EaseFilter Encryption SDK:
 1. **Completely transparent file encryption in file system level.** The encryption process was done in the write IO request, the decryption process was done in the read IO request, there are no extra IO request needed, it is completely transparent to the applications or users, the encryption or decryption doesn't require the application to interfere. 
 2. **Keep encrypted file on disk all the time.** Since the decryption data only was kept in memory, there are no extra file created for the decryption.
@@ -22,6 +36,60 @@ Data protection.
 
 4. **Secure file sharing with DRM.**
 Encrypted your files with digital rights management data embedded into the encrypted header, protect, track and control your encrypted files anywhere anytime, you can grant or revoke the access control to any user at any time even the files were shared.
+
+## Common Use Cases & Code Examples
+
+### 1. Data at Rest Encryption
+Ensure all files written to a specific directory are immediately and transparently encrypted on the physical disk.
+
+```csharp
+// Encrypt all files within the SecureData directory
+FileFilter filter = new FileFilter("C:\\SecureData\\*");
+filter.EnableEncryption = true;
+
+// Assign the AES key (in production, fetch this dynamically from a secure KMS)
+filter.EncryptionKey = Encoding.UTF8.GetBytes("Your32ByteSuperSecretKeyHere1234");
+filterControl.AddFilter(filter);
+```
+
+### 2. Insider Threat Protection
+Prevent unauthorized internal processes or users from accessing clear text. Isolation Minifilter Technology ensures only approved apps get the decrypted view.
+
+```csharp
+FileFilter filter = new FileFilter("C:\\Finance\\*");
+filter.EnableEncryption = true;
+filter.EncryptionKey = mySecureKey;
+
+// Default: Deny decrypted read access to ALL processes (they will see raw cipher text)
+filter.AccessFlags = FilterAPI.ALLOW_MAX_ACCESS_RIGHT & ~FilterAPI.ALLOW_ENCRYPTED_READ;
+
+// Whitelist Microsoft Word to receive the decrypted clear text view
+filter.AddProcessRight("WINWORD.exe", FilterAPI.ALLOW_MAX_ACCESS_RIGHT);
+
+// Whitelist a specific Active Directory user to read decrypted data
+filter.userAccessRightList.Add("DomainName\\HR_Manager", FilterAPI.ALLOW_MAX_ACCESS_RIGHT);
+
+filterControl.AddFilter(filter);
+```
+
+### 3. Ransomware Protection
+Combine transparent encryption with strict access controls to block untrusted binaries from modifying, deleting, or encrypting your already-secured data.
+
+```csharp
+FileFilter filter = new FileFilter("C:\\ProtectedBackups\\*");
+filter.EnableEncryption = true;
+filter.EncryptionKey = mySecureKey;
+
+// Block files from being renamed or deleted by ANY process
+filter.AccessFlags = FilterAPI.ALLOW_MAX_ACCESS_RIGHT & ~FilterAPI.ALLOW_FILE_DELETE  & ~FilterAPI.ALLOW_FILE_RENAME;
+
+// Whitelist your authorized backup agent to allow writing and modification
+filter.AddProcessRight("VeeamAgent.exe", FilterAPI.ALLOW_MAX_ACCESS_RIGHT);
+
+filterControl.AddFilter(filter);
+```
+
+---
 
 ## A C# Auto File Encryption Example
 With the C# auto file encryption example, you can setup an encryption folder in computer A, configure the authorized processes, users who can read the encrypted file, then you can setup the decryption folder in computer B, you can copy the encrypted file to this folder, and configure the authorized processes which can read the encrypted files in the decryption folder.
@@ -69,6 +137,18 @@ With the C# auto file encryption example, you can setup an encryption folder in 
 * [Filter Driver Developer Guide](https://www.easefilter.com/kb/DeveloperGuide.htm)
 * [MiniFilter Filter Driver Framework](https://www.easefilter.com/kb/minifilter-framework.htm)
 * [Isolation Filter Driver](https://www.easefilter.com/kb/Isolation_Filter_Driver.htm)
+
+## License
+
+This repository contains two distinct licensing categories:
+
+1. **Wrapper/Implementation Code (MIT License):** 
+   The source code, scripts, and configuration files provided directly in this repository are licensed under the [MIT License](LICENSE). You are free to modify, distribute, and use this specific integration code.
+
+2. **EaseFilter SDK (Commercial License):**
+   This project requires the EaseFilter SDK (including its binaries, filter drivers, and core libraries) to function. The EaseFilter SDK is **proprietary commercial software** and is strictly excluded from the MIT License.   
+   To use the EaseFilter SDK for commercial purposes or in a production environment, you must obtain a valid commercial license directly from [EaseFilter](https://www.easefilter.com/license.pdf).
+
 
 ## Support
 If you have questions or need help, please contact support@easefilter.com 
